@@ -2,34 +2,34 @@
 
 TEMPLATES_HOME=/usr/share/openstack-tripleo-heat-templates
 CUSTOM_TEMPLATES=/home/stack/templates
+HOST_DOMAIN=$(hostname | cut -d . -f 2,3)
+IP_ADDRESS=$(ip addr show eth1 | awk 'FNR == 3 {print $2}' | cut -d/ -f1)
 
-if [ -f ./osjs.conf ]; then
-	source ./osjs.conf
-fi
+DNS_1=8.8.8.8
+DNS_2=1.1.1.1
 
-if [ -z ${SUBMAN_USER} ]; then
-	read -p "subscription-manager username: " SUBMAN_USER
-fi
+read -p "subscription-manager username: " SUBMAN_USER
+read -s -p "subscription-manager password: " SUBMAN_PASS && echo ""
+read -p "Pool ID: " SUBMAN_POOL
 
-if [ -z ${SUBMAN_PASS} ]; then
-	read -s -p "subscription-manager password: " SUBMAN_PASS
-fi
+###########################################
+### Template authentication is required ###
+###########################################
+#
+#  Set TEMPLATE_AUTHENTICATION to either
+#
+#  TEMPLATE_AUTHENTICATION="${SUBMAN_USER}: '${SUBMAN_PASS}'"
+#
+#          --- or ---
+#
+# Generate a token for use at https://access.redhat.com/terms-based-registry/
+# TEMPLATE_AUTHENTICATION=1234567|user: $token
+#
+###########################################
 
-if [ -z ${SUBMAN_POOL} ]; then
-	read -p "subscription-manager pool: " SUBMAN_POOL
-fi
+TEMPLATE_AUTHENTICATION="${SUBMAN_USER}: '${SUBMAN_PASS}'"
 
-if [ -z ${IP_ADDRESS} ]; then
-	read -p "IP Address: " IP_ADDRESS
-fi
-
-if [ -z ${DNS_1} ]; then
-	DNS_1=8.8.8.8
-fi
-
-if [ -z ${DNS_2} ]; then
-	DNS_2=1.1.1.1
-fi
+###########################################
 
 function CONFIGURE_HOST {
 
@@ -55,6 +55,11 @@ dnf module enable -y container-tools:2.0
 dnf module disable -y virt:rhel
 dnf module enable -y virt:8.2
 
+sudo dnf module disable -y container-tools:rhel8
+sudo dnf module enable -y container-tools:2.0
+sudo dnf module disable -y virt:rhel
+sudo dnf module enable -y virt:8.2
+
 dnf install -y python3-tripleoclient tmux git
 dnf -y update
 }
@@ -72,21 +77,6 @@ cat <<EOF > /home/stack/templates/standalone.yaml
 parameter_defaults:
   ContainerImagePrepare:
   - set:
-      ceph_alertmanager_image: ose-prometheus-alertmanager
-      ceph_alertmanager_namespace: registry.redhat.io/openshift4
-      ceph_alertmanager_tag: 4.1
-      ceph_grafana_image: rhceph-3-dashboard-rhel7
-      ceph_grafana_namespace: registry.redhat.io/rhceph
-      ceph_grafana_tag: 3
-      ceph_image: rhceph-4-rhel8
-      ceph_namespace: registry.redhat.io/rhceph
-      ceph_node_exporter_image: ose-prometheus-node-exporter
-      ceph_node_exporter_namespace: registry.redhat.io/openshift4
-      ceph_node_exporter_tag: v4.1
-      ceph_prometheus_image: ose-prometheus
-      ceph_prometheus_namespace: registry.redhat.io/openshift4
-      ceph_prometheus_tag: 4.1
-      ceph_tag: latest
       name_prefix: openstack-
       name_suffix: ''
       namespace: registry.redhat.io/rhosp-rhel8
@@ -139,7 +129,7 @@ sudo openstack tripleo deploy --templates \
 EOF
 
 chown -R stack:stack /home/stack
-} 
+}
 
 function DEPLOY {
 su --command 'tmux new-session -d -s "deploy" /home/stack/deploy.sh' stack
@@ -147,4 +137,7 @@ su --command 'tmux new-session -d -s "deploy" /home/stack/deploy.sh' stack
 
 CONFIGURE_HOST
 PREINSTALL_CHECKLIST
+
+reboot
+
 # DEPLOY

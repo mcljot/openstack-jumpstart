@@ -2,4 +2,4 @@
 
 A collection of bash functions to quickly deploy an OpenStack standalone system for PoCs.
 
-These scripts may develop dependencies with the https://github.com/rheslop/kvm-os-launcher/[kvm-os-launcher' scripts.
+These scripts may develop dependencies with the https://github.com/rheslop/kvm-os-launcher/[kvm-os-launcher] scripts.
