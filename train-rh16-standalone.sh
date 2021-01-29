@@ -50,11 +50,6 @@ subscription-manager repos \
 
 subscription-manager release --set=8.2
 
-dnf module disable -y container-tools:rhel8
-dnf module enable -y container-tools:2.0
-dnf module disable -y virt:rhel
-dnf module enable -y virt:8.2
-
 sudo dnf module disable -y container-tools:rhel8
 sudo dnf module enable -y container-tools:2.0
 sudo dnf module disable -y virt:rhel
