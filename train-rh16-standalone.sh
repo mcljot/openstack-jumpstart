@@ -35,18 +35,30 @@ function CONFIGURE_HOST {
 
 subscription-manager register --username ${SUBMAN_USER} --password ${SUBMAN_PASS}
 subscription-manager attach --pool=${SUBMAN_POOL}
+
+dnf install -y dnf-utils
+
 subscription-manager repos --disable=*
 subscription-manager repos \
 --enable=rhel-8-for-x86_64-baseos-rpms \
 --enable=rhel-8-for-x86_64-appstream-rpms \
 --enable=rhel-8-for-x86_64-highavailability-rpms \
---enable=ansible-2.8-for-rhel-8-x86_64-rpms \
---enable=openstack-16-for-rhel-8-x86_64-rpms \
---enable=fast-datapath-for-rhel-8-x86_64-rpms
+--enable=ansible-2.9-for-rhel-8-x86_64-rpms \
+--enable=openstack-16.1-for-rhel-8-x86_64-rpms \
+--enable=fast-datapath-for-rhel-8-x86_64-rpms \
+--enable=advanced-virt-for-rhel-8-x86_64-rpms
+
+subscription-manager release --set=8.2
+
+dnf module disable -y container-tools:rhel8
+dnf module enable -y container-tools:2.0
+dnf module disable -y virt:rhel
+dnf module enable -y virt:8.2
 
 dnf install -y python3-tripleoclient tmux git
 dnf -y update
 }
+
 
 function PREINSTALL_CHECKLIST {
 useradd stack
@@ -80,7 +92,7 @@ parameter_defaults:
       namespace: registry.redhat.io/rhosp-rhel8
       neutron_driver: ovn
       rhel_containers: false
-      tag: '16.0'
+      tag: '16.1'
     tag_from_label: '{version}-{release}'
   ContainerImageRegistryCredentials:
     registry.redhat.io:
